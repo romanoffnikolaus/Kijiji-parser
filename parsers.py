@@ -11,7 +11,8 @@ class KijijiScraper:
     def __init__(self, url, driver_path):
         self.url = url
         options = webdriver.ChromeOptions()
-        options.add_argument('--headless')
+        options.add_argument('--headless') 
+        # Headless режим запускает парсинг без графического интерфейса. Сделано для большей производительности
         self.service = Service(driver_path)
         self.driver = webdriver.Chrome(service=self.service, options=options)
         self.session = Session()
@@ -19,12 +20,12 @@ class KijijiScraper:
     def scrape(self):
         self.driver.get(self.url)
         while True:
-            cards = self.driver.find_elements(By.CLASS_NAME, 'search-item')
             print(f'Parser started. Loading...')
+            cards = self.driver.find_elements(By.CLASS_NAME, 'search-item')
             for card in cards:
                 title_element = card.find_element(By.CLASS_NAME, "title")
                 title_text = title_element.text.strip()
-
+                
                 price = card.find_element(By.CLASS_NAME, 'price').text
                 if '$' in price:
                     currency = price[0]
@@ -32,15 +33,15 @@ class KijijiScraper:
                 else:
                     currency = '-'
                     total_price = price
-
+               
                 image = card.find_element(By.CLASS_NAME, 'image').find_element(
                     By.TAG_NAME, 'img').get_attribute('data-src')
                 if not image:
                     image = 'No such elements'
-
+                
                 location = card.find_element(By.CLASS_NAME, "location")
                 location_text = location.find_element(By.TAG_NAME, 'span').text
-
+                
                 location_div = card.find_element(By.CLASS_NAME, 'location')
                 date_posted_span = location_div.find_element(
                     By.CSS_SELECTOR, 'span.date-posted').text
@@ -61,9 +62,8 @@ class KijijiScraper:
                     location=location_text,
                     date=result_date,
                     image=image
-                )
+                    )
                 self.session.add(parsed_data)
-
             self.session.commit()
 
             try:
@@ -76,12 +76,11 @@ class KijijiScraper:
             except IndexError:
                 print('There are no more pages!')
                 break
-
         self.session.close()
         self.driver.quit()
 
 
 if __name__ == "__main__":
-    url = f'https://www.kijiji.ca/b-apartments-condos/city-of-toronto/page-1/c37l1700273?ad=offering'
+    url = 'https://www.kijiji.ca/b-apartments-condos/city-of-toronto/page-1/c37l1700273?ad=offering'
     scraper = KijijiScraper(url, driver_path=config('DRIVER_PATH'))
     scraper.scrape()
